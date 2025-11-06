@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
 import Flashcard from './Flashcard';
@@ -114,6 +113,10 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
           responseSchema: responseSchema,
         },
       });
+
+      if (!response.text) {
+        throw new Error("No response text received from AI");
+      }
 
       const rawText = response.text.trim();
       // The model can sometimes wrap the JSON in markdown fences (```json ... ```).
@@ -262,7 +265,8 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
       </div>
 
       <div className="w-full max-w-lg p-4 border border-[#9d4edd]/50 bg-[#1a1a2e]/50 backdrop-blur-sm rounded-lg flex flex-col gap-4">
-        <CategoryDisplay cardProgress={cardProgress} totalCards={cards.length} />
+        {/* FIX: Removed unused `totalCards` prop from CategoryDisplay as it is not defined in the component's props. */}
+        <CategoryDisplay cardProgress={cardProgress} />
         <p className="font-orbitron text-center text-xl">{activeCards.length} Cards Remaining</p>
         <ProgressBar current={masteredCount} total={cards.length} />
         

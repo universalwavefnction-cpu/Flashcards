@@ -2,10 +2,9 @@ import React, { useMemo } from 'react';
 
 interface CategoryDisplayProps {
   cardProgress: Map<number, number>;
-  totalCards: number;
 }
 
-const CategoryDisplay: React.FC<CategoryDisplayProps> = ({ cardProgress, totalCards }) => {
+const CategoryDisplay: React.FC<CategoryDisplayProps> = ({ cardProgress }) => {
   const categoryCounts = useMemo(() => {
     const counts = {
       learning: 0,

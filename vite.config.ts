@@ -1,4 +1,3 @@
-import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -11,13 +10,18 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '.'),
-        }
+        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
+        // FIX: Explicitly JSON.stringify the Firebase config object to ensure it's
+        // replaced as a valid JSON string literal in the client-side code.
+        'process.env.FIREBASE_CONFIG': JSON.stringify({
+          apiKey: env.VITE_FIREBASE_API_KEY,
+          authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+          projectId: env.VITE_FIREBASE_PROJECT_ID,
+          storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+          messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+          appId: env.VITE_FIREBASE_APP_ID
+        })
       }
     };
 });

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import NeonButton from './NeonButton';
 import type { Card, Deck } from '../types';
@@ -18,7 +17,7 @@ const defaultVocab = [
 ].join('\n');
 
 
-const DeckEditor: React.FC<DeckEditorProps> = ({ onSaveDeck, onCancel, deckToEdit }) => {
+const VocabularyInput: React.FC<DeckEditorProps> = ({ onSaveDeck, onCancel, deckToEdit }) => {
   const [deckName, setDeckName] = useState('');
   const [vocabText, setVocabText] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -118,4 +117,4 @@ const DeckEditor: React.FC<DeckEditorProps> = ({ onSaveDeck, onCancel, deckToEdi
   );
 };
 
-export default DeckEditor;
+export default VocabularyInput;
