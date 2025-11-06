@@ -7,7 +7,15 @@ import { getFirestore } from "firebase/firestore";
 // Added safety check to handle undefined config gracefully.
 const firebaseConfig = process.env.FIREBASE_CONFIG
   ? JSON.parse(process.env.FIREBASE_CONFIG as string)
-  : (() => { throw new Error('Firebase configuration is missing. Please check your environment variables.'); })();
+  : (() => {
+      throw new Error(
+        'Firebase configuration is missing. Please check your .env file and ensure the Vite dev server is running correctly.\n\n' +
+        'Steps to fix:\n' +
+        '1. Copy .env.example to .env\n' +
+        '2. Fill in your Firebase credentials\n' +
+        '3. Restart the dev server with: npm run dev'
+      );
+    })();
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
