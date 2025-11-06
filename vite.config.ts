@@ -3,6 +3,13 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+
+    // Debug: Log loaded environment variables
+    console.log('🔍 Vite Config - Loaded env vars:');
+    console.log('  GEMINI_API_KEY:', env.GEMINI_API_KEY ? '✓ Set' : '✗ Missing');
+    console.log('  VITE_FIREBASE_API_KEY:', env.VITE_FIREBASE_API_KEY ? '✓ Set' : '✗ Missing');
+    console.log('  VITE_FIREBASE_PROJECT_ID:', env.VITE_FIREBASE_PROJECT_ID ? '✓ Set' : '✗ Missing');
+
     return {
       server: {
         port: 3000,
