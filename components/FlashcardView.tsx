@@ -115,11 +115,15 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
         },
       });
 
+      if (!response.text) {
+        throw new Error("No response text received from AI");
+      }
+
       const rawText = response.text.trim();
       // The model can sometimes wrap the JSON in markdown fences (```json ... ```).
       // This regex strips them before parsing.
       const jsonText = rawText.replace(/^```json\s*|```$/g, '');
-      
+
       const data: AIContext = JSON.parse(jsonText);
       setAiContext(data);
 

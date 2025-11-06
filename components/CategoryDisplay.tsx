@@ -5,7 +5,7 @@ interface CategoryDisplayProps {
   totalCards: number;
 }
 
-const CategoryDisplay: React.FC<CategoryDisplayProps> = ({ cardProgress, totalCards }) => {
+const CategoryDisplay: React.FC<CategoryDisplayProps> = ({ cardProgress }) => {
   const categoryCounts = useMemo(() => {
     const counts = {
       learning: 0,
