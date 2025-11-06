@@ -3,9 +3,11 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 // This configuration is now an object injected directly by Vite's `define` config.
-// FIX: The config is injected as a JSON string, so it must be parsed into an object.
-// The type assertion `as string` is necessary for TypeScript to compile.
-const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG as string);
+// The config is injected as a JSON string, so it must be parsed into an object.
+// Added safety check to handle undefined config gracefully.
+const firebaseConfig = process.env.FIREBASE_CONFIG
+  ? JSON.parse(process.env.FIREBASE_CONFIG as string)
+  : (() => { throw new Error('Firebase configuration is missing. Please check your environment variables.'); })();
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
