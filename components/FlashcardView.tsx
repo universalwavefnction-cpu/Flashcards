@@ -82,7 +82,13 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
     setContextError(null);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+
+      if (!apiKey || apiKey === '' || apiKey === 'undefined') {
+        throw new Error("API key not configured. Please set GEMINI_API_KEY in your .env file.");
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
       
       const language = direction === 'de-en' ? 'German' : 'English';
       const wordToExplain = direction === 'de-en' ? currentCard.original : currentCard.translation;
