@@ -8,6 +8,7 @@ import CategoryDisplay from './CategoryDisplay';
 import AIContextDisplay from './AIContextDisplay';
 import { ShuffleIcon, ResetIcon, CheckIcon, XIcon, SparklesIcon } from './Icons';
 import type { Card, LanguageDirection, AIContext } from '../types';
+import { getApiKey } from '../hooks/useLocalStorage';
 
 interface FlashcardViewProps {
   cards: Card[];
@@ -35,6 +36,13 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
   const [aiContext, setAiContext] = useState<AIContext | null>(null);
   const [isContextLoading, setIsContextLoading] = useState(false);
   const [contextError, setContextError] = useState<string | null>(null);
+  const [isAiEnabled, setIsAiEnabled] = useState(false);
+
+  // Check for API key on mount and when cards change (session restarts)
+  useEffect(() => {
+    const key = getApiKey() || process.env.API_KEY;
+    setIsAiEnabled(!!key);
+  }, [cards]);
 
   const resetCardState = useCallback(() => {
     setIsFlipped(false);
@@ -76,12 +84,19 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
   const handleGetAIContext = async () => {
     if (!currentCard) return;
 
+    const apiKey = getApiKey() || process.env.API_KEY;
+
+    if (!apiKey) {
+      setContextError("Gemini API Key not found. Please add it in the settings.");
+      return;
+    }
+
     setIsContextLoading(true);
     setAiContext(null);
     setContextError(null);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       
       const language = direction === 'de-en' ? 'German' : 'English';
       const wordToExplain = direction === 'de-en' ? currentCard.original : currentCard.translation;
@@ -128,7 +143,7 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
 
     } catch (err) {
       console.error("AI context error:", err);
-      setContextError("Failed to generate context. The AI might be offline.");
+      setContextError("Failed to generate context. The AI might be offline or the API key is invalid.");
     } finally {
       setIsContextLoading(false);
     }
@@ -229,10 +244,10 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
         />
         <NeonButton 
             onClick={handleGetAIContext} 
-            disabled={isContextLoading}
+            disabled={isContextLoading || !isAiEnabled}
             color="purple" 
             className="!p-2 absolute bottom-2 right-2 z-10"
-            title="Get AI Context"
+            title={isAiEnabled ? "Get AI Context" : "API Key not set"}
         >
             <SparklesIcon />
         </NeonButton>
@@ -265,7 +280,6 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
       </div>
 
       <div className="w-full max-w-lg p-4 border border-[#9d4edd]/50 bg-[#1a1a2e]/50 backdrop-blur-sm rounded-lg flex flex-col gap-4">
-        {/* FIX: Removed unused `totalCards` prop from CategoryDisplay as it is not defined in the component's props. */}
         <CategoryDisplay cardProgress={cardProgress} />
         <p className="font-orbitron text-center text-xl">{activeCards.length} Cards Remaining</p>
         <ProgressBar current={masteredCount} total={cards.length} />

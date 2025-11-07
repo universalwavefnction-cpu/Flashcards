@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Card, Deck } from '../types';
 
@@ -56,14 +56,28 @@ export const deleteDeck = async (userId: string, deckId: string): Promise<void> 
     }
 };
 
-
-export const importLegacyDeck = async (userId: string, deck: Deck): Promise<void> => {
+export const importLegacyDecks = async (userId: string, decks: Deck[]): Promise<void> => {
     if (!userId) throw new Error("User not authenticated");
+    if (!decks || decks.length === 0) return;
+
     try {
-        // We can't know the legacy ID, so we create a new deck in Firestore
-        await createDeck(userId, { name: deck.name, cards: deck.cards });
+        const batch = writeBatch(db);
+        const decksCollection = getDecksCollection(userId);
+        
+        decks.forEach(deck => {
+            // Create a new document reference for each imported deck
+            const newDeckRef = doc(decksCollection);
+            const newDeckData = {
+                id: newDeckRef.id,
+                name: deck.name,
+                cards: deck.cards,
+            };
+            batch.set(newDeckRef, newDeckData);
+        });
+        
+        await batch.commit();
     } catch(error) {
-        console.error("Error importing legacy deck to Firestore:", error);
+        console.error("Error batch importing legacy decks to Firestore:", error);
         throw error;
     }
 };

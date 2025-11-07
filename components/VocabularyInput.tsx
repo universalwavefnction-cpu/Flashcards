@@ -17,7 +17,7 @@ const defaultVocab = [
 ].join('\n');
 
 
-const VocabularyInput: React.FC<DeckEditorProps> = ({ onSaveDeck, onCancel, deckToEdit }) => {
+const DeckEditor: React.FC<DeckEditorProps> = ({ onSaveDeck, onCancel, deckToEdit }) => {
   const [deckName, setDeckName] = useState('');
   const [vocabText, setVocabText] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -117,4 +117,4 @@ const VocabularyInput: React.FC<DeckEditorProps> = ({ onSaveDeck, onCancel, deck
   );
 };
 
-export default VocabularyInput;
+export default DeckEditor;
