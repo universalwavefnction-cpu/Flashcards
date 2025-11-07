@@ -121,19 +121,7 @@ const App: React.FC = () => {
 
   const activeDeck = decks.find(d => d.id === activeDeckId);
 
-  const renderContent = () => {
-    if (isLoading || authLoading) {
-      return (
-        <div className="p-6 text-center">
-            <h2 className="font-orbitron text-2xl text-center text-[#9d4edd] animate-pulse">// ACCESSING SECURE CONNECTION... //</h2>
-        </div>
-      );
-    }
-    
-    if (!user) {
-        return <Login />;
-    }
-
+  const renderLoggedInContent = () => {
     if (legacyDecks && legacyDecks.length > 0) {
         return (
             <div className="p-6 text-center border border-[#9d4edd] bg-[#1a1a2e]/50 backdrop-blur-sm shadow-lg shadow-[#9d4edd]/20 rounded-lg">
@@ -169,10 +157,26 @@ const App: React.FC = () => {
     }
   }
 
+  if (isLoading || authLoading) {
+    return (
+      <div className="min-h-screen w-full bg-[#0a0e27] text-[#00f3ff] bg-[linear-gradient(to_right,#1a1a2e_1px,transparent_1px),linear-gradient(to_bottom,#1a1a2e_1px,transparent_1px)] bg-[size:3rem_3rem] p-4 sm:p-8 flex items-center justify-center">
+          <h2 className="font-orbitron text-2xl text-center text-[#9d4edd] animate-pulse">// ACCESSING SECURE CONNECTION... //</h2>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return (
+        <div className="min-h-screen w-full bg-[#0a0e27] text-[#00f3ff] bg-[linear-gradient(to_right,#1a1a2e_1px,transparent_1px),linear-gradient(to_bottom,#1a1a2e_1px,transparent_1px)] bg-[size:3rem_3rem] p-4 sm:p-8 flex items-center justify-center">
+            <Login />
+        </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen w-full bg-[#0a0e27] text-[#00f3ff] bg-[linear-gradient(to_right,#1a1a2e_1px,transparent_1px),linear-gradient(to_bottom,#1a1a2e_1px,transparent_1px)] bg-[size:3rem_3rem] p-4 sm:p-8 flex flex-col items-center justify-center">
+    <div className="min-h-screen w-full bg-[#0a0e27] text-[#00f3ff] bg-[linear-gradient(to_right,#1a1a2e_1px,transparent_1px),linear-gradient(to_bottom,#1a1a2e_1px,transparent_1px)] bg-[size:3rem_3rem] p-4 sm:p-8 flex flex-col items-center">
       <style>{`.animate-fade-in { animation: fadeIn 0.5s ease-in-out; } @keyframes fadeIn { 0% { opacity: 0; transform: translateY(-10px); } 100% { opacity: 1; transform: translateY(0); } }`}</style>
-      <div className="w-full max-w-4xl mx-auto">
+      <div className="w-full max-w-4xl mx-auto flex flex-col flex-grow justify-center">
         <header className="text-center mb-8 cursor-pointer" onClick={() => { setView('deck-list'); setActiveDeckId(null); }}>
           <h1 className="font-orbitron text-4xl md:text-6xl font-bold uppercase tracking-widest text-shadow-glow">
             Cyber Vocab
@@ -181,32 +185,32 @@ const App: React.FC = () => {
         </header>
 
         <main className="w-full">
-          {renderContent()}
+          {renderLoggedInContent()}
         </main>
-
-        <footer className="text-center mt-8 text-xs text-purple-400/50">
-            <p>// PROTOTYPE INTERFACE v2.6 //</p>
-            <p>{user ? `// CONNECTION ESTABLISHED: ${user.email}` : '// DATA SERVICE OFFLINE //'}</p>
-            <div className="flex items-center justify-center gap-4 mt-2">
-                <button 
-                    onClick={() => setIsSettingsOpen(true)}
-                    className="text-purple-400/50 hover:text-purple-300 transition-colors flex items-center gap-2 mx-auto"
-                    aria-label="Open API Settings"
-                >
-                    <SettingsIcon /> API Settings
-                </button>
-                {user && (
-                    <button 
-                        onClick={handleLogout}
-                        className="text-purple-400/50 hover:text-purple-300 transition-colors flex items-center gap-2 mx-auto"
-                        aria-label="Logout"
-                    >
-                        <LogoutIcon /> Logout
-                    </button>
-                )}
-            </div>
-        </footer>
       </div>
+
+      <footer className="w-full max-w-4xl mx-auto text-center mt-8 text-xs text-purple-400/50">
+          <p>// PROTOTYPE INTERFACE v2.6 //</p>
+          <p>{user ? `// CONNECTION ESTABLISHED: ${user.email || user.phoneNumber || 'User Authenticated'}` : '// DATA SERVICE OFFLINE //'}</p>
+          <div className="flex items-center justify-center gap-4 mt-2">
+              <button 
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="text-purple-400/50 hover:text-purple-300 transition-colors flex items-center gap-2"
+                  aria-label="Open API Settings"
+              >
+                  <SettingsIcon /> API Settings
+              </button>
+              {user && (
+                  <button 
+                      onClick={handleLogout}
+                      className="text-purple-400/50 hover:text-purple-300 transition-colors flex items-center gap-2"
+                      aria-label="Logout"
+                  >
+                      <LogoutIcon /> Logout
+                  </button>
+              )}
+          </div>
+      </footer>
       {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} />}
     </div>
   );
