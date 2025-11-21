@@ -110,6 +110,16 @@ const App: React.FC = () => {
   const handleEndSession = () => {
     setView(activeDeckId ? 'deck-view' : 'deck-list');
   };
+
+  const handleProgressUpdate = useCallback(async (updatedCards: Card[]) => {
+    if (!user || !activeDeckId) return;
+    const deckToUpdate = decks.find(d => d.id === activeDeckId);
+    if (!deckToUpdate) return;
+
+    const updatedDeck = { ...deckToUpdate, cards: updatedCards };
+    await firestoreService.saveDeck(user.uid, updatedDeck);
+    setDecks(prevDecks => prevDecks.map(deck => (deck.id === activeDeckId ? updatedDeck : deck)));
+  }, [user, activeDeckId, decks]);
   
   const handleLogout = async () => {
     try {
@@ -150,7 +160,7 @@ const App: React.FC = () => {
                               onBack={() => { setView('deck-list'); setActiveDeckId(null); }}
                             /> : <p>Error: Deck not found.</p>;
       case 'flashcards':
-        return <FlashcardView cards={currentSessionCards} onEndSession={handleEndSession} />
+        return <FlashcardView cards={currentSessionCards} onEndSession={handleEndSession} onProgressUpdate={handleProgressUpdate} />
       case 'deck-list':
       default:
         return <DeckList decks={decks} onSelectDeck={handleSelectDeck} onCreateDeck={handleCreateNewDeck} />

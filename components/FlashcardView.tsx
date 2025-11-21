@@ -13,6 +13,7 @@ import { getApiKey } from '../hooks/useLocalStorage';
 interface FlashcardViewProps {
   cards: Card[];
   onEndSession: () => void;
+  onProgressUpdate?: (updatedCards: Card[]) => void;
 }
 
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -24,7 +25,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return newArray;
 };
 
-const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) => {
+const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onProgressUpdate }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [cardProgress, setCardProgress] = useState<Map<number, number>>(new Map());
   const [activeCards, setActiveCards] = useState<Card[]>([]);
@@ -60,8 +61,9 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
 
   const initializeSession = useCallback(() => {
     const initialProgress = new Map<number, number>();
-    cards.forEach((_, index) => {
-      initialProgress.set(index, 0);
+    cards.forEach((card, index) => {
+      // Load progress from card if it exists, otherwise default to 0
+      initialProgress.set(index, card.progress ?? 0);
     });
     setCardProgress(initialProgress);
     setActiveCards(shuffleArray(cards));
@@ -216,9 +218,20 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
     }
     newProgress.set(originalIndex, nextStreak);
     setCardProgress(newProgress);
-    
+
+    // Persist progress back to cards
+    const updatedCards = cards.map((card, index) => ({
+      ...card,
+      progress: newProgress.get(index) ?? 0
+    }));
+
+    // Save to storage
+    if (onProgressUpdate) {
+      onProgressUpdate(updatedCards);
+    }
+
     resetCardState();
-    
+
     if (isCorrect && nextStreak === 3) {
         const nextActiveCards = activeCards.filter(c => c.original !== currentCard.original || c.translation !== currentCard.translation);
         const nextIndex = currentIndex >= nextActiveCards.length ? 0 : currentIndex;
@@ -227,7 +240,7 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
     } else {
         setCurrentIndex(prev => (prev + 1) % (activeCards.length || 1));
     }
-  }, [activeCards, currentIndex, cards, cardProgress, resetCardState, currentCard]);
+  }, [activeCards, currentIndex, cards, cardProgress, resetCardState, currentCard, onProgressUpdate]);
 
   const handleShuffle = () => {
     const nonMasteredCards = cards.filter((_, index) => (cardProgress.get(index) || 0) < 3);
