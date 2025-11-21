@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import NeonButton from './NeonButton';
 import type { Card, Deck } from '../types';
 
 interface DeckEditorProps {
-  onSaveDeck: (deckData: { id?: string; name: string; cards: Card[] }) => void;
+  onSaveDeck: (deckData: { id?: string; name:string; cards: Card[] }) => void;
   onCancel: () => void;
   deckToEdit?: Deck | null;
 }
@@ -17,6 +16,7 @@ const defaultVocab = [
   'der Wald, the forest',
 ].join('\n');
 
+
 const DeckEditor: React.FC<DeckEditorProps> = ({ onSaveDeck, onCancel, deckToEdit }) => {
   const [deckName, setDeckName] = useState('');
   const [vocabText, setVocabText] = useState('');
@@ -24,21 +24,22 @@ const DeckEditor: React.FC<DeckEditorProps> = ({ onSaveDeck, onCancel, deckToEdi
 
   useEffect(() => {
     if (deckToEdit) {
-      setDeckName(deckToEdit.name);
-      setVocabText(deckToEdit.cards.map(c => `${c.original}, ${c.translation}`).join('\n'));
+        setDeckName(deckToEdit.name);
+        setVocabText(deckToEdit.cards.map(c => `${c.original}, ${c.translation}`).join('\n'));
     } else {
-      setDeckName('');
-      setVocabText(defaultVocab);
+        setDeckName('');
+        setVocabText(defaultVocab);
     }
   }, [deckToEdit]);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     if (!deckName.trim()) {
-      setError('Databank name is required.');
-      return;
+        setError('Databank name is required.');
+        return;
     }
 
     const parsedCards: Card[] = vocabText
@@ -60,121 +61,59 @@ const DeckEditor: React.FC<DeckEditorProps> = ({ onSaveDeck, onCancel, deckToEdi
     }
 
     onSaveDeck({
-      id: deckToEdit?.id,
-      name: deckName,
-      cards: parsedCards
+        id: deckToEdit?.id,
+        name: deckName,
+        cards: parsedCards
     });
   };
 
   return (
-    <motion.div
-      className="card card-purple p-6"
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
-    >
+    <div className="p-6 border border-[#9d4edd] bg-[#1a1a2e]/50 backdrop-blur-sm shadow-lg shadow-[#9d4edd]/20 rounded-lg animate-fade-in">
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <h2
-          className="text-gradient-purple"
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'var(--font-size-2xl)',
-            textAlign: 'center'
-          }}
-        >
-          {deckToEdit ? '// EDITING DATABANK //' : '// CREATING DATABANK //'}
-        </h2>
+        <h2 className="font-orbitron text-2xl text-center text-[#9d4edd]">{deckToEdit ? '// EDITING DATABANK //' : '// CREATING DATABANK //'}</h2>
         {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{
-              padding: 'var(--space-3)',
-              background: 'rgba(239, 68, 68, 0.2)',
-              border: '1px solid var(--color-red)',
-              borderRadius: 'var(--radius-lg)',
-              color: 'var(--color-red-light)'
-            }}
-          >
-            <p
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 'bold',
-                marginBottom: 'var(--space-1)'
-              }}
-            >
-              // TRANSMISSION ERROR //
-            </p>
-            <p>{error}</p>
-          </motion.div>
+            <div className="p-3 bg-red-500/20 border border-red-500 text-red-400 rounded-md">
+                <p className="font-bold font-orbitron">// TRANSMISSION ERROR //</p>
+                <p>{error}</p>
+            </div>
         )}
         <div>
-          <label
-            htmlFor="deck-name"
-            style={{
-              display: 'block',
-              marginBottom: 'var(--space-2)',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 'bold',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              color: 'var(--color-cyan)'
-            }}
-          >
-            // Databank Name
-          </label>
-          <input
-            id="deck-name"
-            type="text"
-            value={deckName}
-            onChange={(e) => setDeckName(e.target.value)}
-            placeholder="e.g., Chapter 1 Verbs"
-            className="input"
-          />
+            <label htmlFor="deck-name" className="block mb-2 font-bold uppercase tracking-wider text-[#00f3ff]">
+              // Databank Name
+            </label>
+            <input
+              id="deck-name"
+              type="text"
+              value={deckName}
+              onChange={(e) => setDeckName(e.target.value)}
+              placeholder="e.g., Chapter 1 Verbs"
+              className="w-full p-3 bg-[#0a0e27]/80 border-2 border-[#00f3ff] rounded-md focus:outline-none focus:border-[#ff006e] focus:ring-2 focus:ring-[#ff006e] text-white transition-all duration-300 shadow-inner shadow-[#00f3ff]/20"
+            />
         </div>
         <div>
-          <label
-            htmlFor="vocab-input"
-            style={{
-              display: 'block',
-              marginBottom: 'var(--space-2)',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 'bold',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              color: 'var(--color-cyan)'
-            }}
-          >
+          <label htmlFor="vocab-input" className="block mb-2 font-bold uppercase tracking-wider text-[#00f3ff]">
             // Paste Vocabulary
           </label>
-          <p
-            style={{
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-text-muted)',
-              marginBottom: 'var(--space-2)'
-            }}
-          >
-            // Format: German word, English translation (one per line)
-          </p>
+          <p className="text-xs text-gray-400 mb-2">// Format: German word, English translation (one per line)</p>
           <textarea
             id="vocab-input"
             value={vocabText}
             onChange={(e) => setVocabText(e.target.value)}
             rows={10}
             placeholder="das Verhängnis, fate&#10;die Seele, soul"
-            className="input"
+            className="w-full p-3 bg-[#0a0e27]/80 border-2 border-[#00f3ff] rounded-md focus:outline-none focus:border-[#ff006e] focus:ring-2 focus:ring-[#ff006e] text-white transition-all duration-300 shadow-inner shadow-[#00f3ff]/20"
           />
         </div>
         <div className="flex gap-4">
-          <NeonButton type="button" onClick={onCancel} color="red" style={{ flex: 1 }}>
-            Abort
-          </NeonButton>
-          <NeonButton type="submit" color="magenta" style={{ flex: 1 }}>
-            Save Databank
-          </NeonButton>
+            <NeonButton type="button" onClick={onCancel} color="red" className="flex-1">
+              Abort
+            </NeonButton>
+            <NeonButton type="submit" color="magenta" className="flex-1">
+              Save Databank
+            </NeonButton>
         </div>
       </form>
-    </motion.div>
+    </div>
   );
 };
 

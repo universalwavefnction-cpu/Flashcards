@@ -4,10 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cyberpunk Vocab Flashcards</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/styles.css">
+    <style>
+      body {
+        font-family: 'Rajdhani', sans-serif;
+      }
+      .font-orbitron {
+        font-family: 'Orbitron', sans-serif;
+      }
+    </style>
 <script type="importmap">
 {
   "imports": {
@@ -17,14 +25,12 @@
     "firebase/": "https://aistudiocdn.com/firebase@^12.5.0/",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0",
     "vite": "https://aistudiocdn.com/vite@^7.2.2",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0",
-    "framer-motion": "https://aistudiocdn.com/framer-motion@^11.18.0"
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0"
   }
 }
 </script>
 </head>
-  <body>
-    <div class="app-background"></div>
+  <body class="bg-[#0a0e27]">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleGenAI, Type } from '@google/genai';
 import Flashcard from './Flashcard';
 import NeonButton from './NeonButton';
@@ -41,11 +40,13 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onPr
   const [isAiEnabled, setIsAiEnabled] = useState(false);
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
+  // Check for API key on mount and when cards change (session restarts)
   useEffect(() => {
     const key = getApiKey() || process.env.API_KEY;
     setIsAiEnabled(!!key);
   }, [cards]);
 
+  // Cleanup: Abort any pending AI requests on unmount
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
@@ -61,6 +62,7 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onPr
   const initializeSession = useCallback(() => {
     const initialProgress = new Map<number, number>();
     cards.forEach((card, index) => {
+      // Load progress from card if it exists, otherwise default to 0
       initialProgress.set(index, card.progress ?? 0);
     });
     setCardProgress(initialProgress);
@@ -76,6 +78,7 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onPr
   }, [cards, initializeSession]);
 
   const handleFlip = useCallback((event?: React.MouseEvent | React.TouchEvent) => {
+    // Don't flip if the click came from a button or if already flipped
     if (event && event.target !== event.currentTarget) {
       return;
     }
@@ -85,8 +88,10 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onPr
   }, [isFlipped]);
 
   const currentCard = useMemo(() => activeCards.length > 0 ? activeCards[currentIndex] : null, [activeCards, currentIndex]);
-
+  
+  // Clear AI context when card changes
   useEffect(() => {
+    // Abort any pending request when card changes
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -95,7 +100,9 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onPr
     setContextError(null);
   }, [currentCard]);
 
+
   const handleGetAIContext = async (event: React.MouseEvent | React.TouchEvent) => {
+    // Prevent the event from propagating to the flashcard
     event.preventDefault();
     event.stopPropagation();
 
@@ -108,6 +115,7 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onPr
       return;
     }
 
+    // Abort any previous request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -116,6 +124,7 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onPr
     setAiContext(null);
     setContextError(null);
 
+    // Create AbortController for timeout on mobile
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
     const timeoutId = setTimeout(() => abortController.abort(), 15000);
@@ -127,24 +136,25 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onPr
       const wordToExplain = direction === 'de-en' ? currentCard.original : currentCard.translation;
 
       const responseSchema = {
-        type: Type.OBJECT,
-        properties: {
-          sampleSentence: {
-            type: Type.STRING,
-            description: `A simple sample sentence in ${language} using the word.`,
+          type: Type.OBJECT,
+          properties: {
+              sampleSentence: {
+                  type: Type.STRING,
+                  description: `A simple sample sentence in ${language} using the word.`,
+              },
+              sentenceTranslation: {
+                  type: Type.STRING,
+                  description: 'The English translation of the sample sentence.',
+              },
+              explanation: {
+                  type: Type.STRING,
+                  description: "A brief, simple explanation of the word's meaning or usage.",
+              },
           },
-          sentenceTranslation: {
-            type: Type.STRING,
-            description: 'The English translation of the sample sentence.',
-          },
-          explanation: {
-            type: Type.STRING,
-            description: "A brief, simple explanation of the word's meaning or usage.",
-          },
-        },
-        required: ['sampleSentence', 'sentenceTranslation', 'explanation'],
+          required: ['sampleSentence', 'sentenceTranslation', 'explanation'],
       };
 
+      // Wrap the API call with timeout using Promise.race
       const apiCall = ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: `Provide context for the ${language} word "${wordToExplain}". Give me a simple sample sentence, its English translation, and a brief explanation.`,
@@ -167,12 +177,15 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onPr
       }
 
       const rawText = response.text.trim();
+      // The model can sometimes wrap the JSON in markdown fences (```json ... ```).
+      // This regex strips them before parsing.
       const jsonText = rawText.replace(/^```json\s*|```$/g, '');
 
       const data: AIContext = JSON.parse(jsonText);
       setAiContext(data);
 
     } catch (err) {
+      // Don't show error if request was aborted intentionally
       if (err instanceof Error && err.name === 'AbortError') {
         return;
       }
@@ -201,16 +214,18 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onPr
     if (isCorrect) {
       nextStreak = Math.min(currentStreak + 1, 3);
     } else {
-      nextStreak = 0;
+      nextStreak = 0; // Reset streak
     }
     newProgress.set(originalIndex, nextStreak);
     setCardProgress(newProgress);
 
+    // Persist progress back to cards
     const updatedCards = cards.map((card, index) => ({
       ...card,
       progress: newProgress.get(index) ?? 0
     }));
 
+    // Save to storage
     if (onProgressUpdate) {
       onProgressUpdate(updatedCards);
     }
@@ -218,12 +233,12 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onPr
     resetCardState();
 
     if (isCorrect && nextStreak === 3) {
-      const nextActiveCards = activeCards.filter(c => c.original !== currentCard.original || c.translation !== currentCard.translation);
-      const nextIndex = currentIndex >= nextActiveCards.length ? 0 : currentIndex;
-      setActiveCards(nextActiveCards);
-      setCurrentIndex(nextIndex);
+        const nextActiveCards = activeCards.filter(c => c.original !== currentCard.original || c.translation !== currentCard.translation);
+        const nextIndex = currentIndex >= nextActiveCards.length ? 0 : currentIndex;
+        setActiveCards(nextActiveCards);
+        setCurrentIndex(nextIndex);
     } else {
-      setCurrentIndex(prev => (prev + 1) % (activeCards.length || 1));
+        setCurrentIndex(prev => (prev + 1) % (activeCards.length || 1));
     }
   }, [activeCards, currentIndex, cards, cardProgress, resetCardState, currentCard, onProgressUpdate]);
 
@@ -233,7 +248,7 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onPr
     setCurrentIndex(0);
     resetCardState();
   };
-
+  
   const handleDirectionChange = useCallback(() => {
     setDirection(d => (d === 'de-en' ? 'en-de' : 'de-en'));
     resetCardState();
@@ -257,65 +272,33 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onPr
     });
     return count;
   }, [cardProgress]);
+  
 
   if (!isInitialized) {
-    return (
-      <div style={{ textAlign: 'center', fontFamily: 'var(--font-display)' }}>
-        <p>Initializing Transmission...</p>
-      </div>
-    );
+    return <p className="text-center font-orbitron">Initializing Transmission...</p>;
   }
 
   if (activeCards.length === 0) {
     return (
-      <motion.div
-        className="card"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        style={{
-          textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 'var(--space-4)',
-          padding: 'var(--space-8)',
-          border: '1px solid var(--color-green)'
-        }}
-      >
-        <h2
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'var(--font-size-3xl)',
-            color: 'var(--color-green)'
-          }}
-        >
-          // SESSION COMPLETE //
-        </h2>
-        <p>All cards have been mastered. Excellent work.</p>
-        <div className="flex gap-4">
-          <NeonButton onClick={initializeSession} color="green">Study Again</NeonButton>
-          <NeonButton onClick={onEndSession} color="red">End Session</NeonButton>
+        <div className="text-center flex flex-col items-center gap-4 p-8 bg-[#1a1a2e]/50 backdrop-blur-sm rounded-lg border border-green-400">
+            <h2 className="font-orbitron text-3xl text-green-400">// SESSION COMPLETE //</h2>
+            <p>All cards have been mastered. Excellent work.</p>
+            <div className='flex gap-4'>
+                <NeonButton onClick={initializeSession} color="green">Study Again</NeonButton>
+                <NeonButton onClick={onEndSession} color="red">End Session</NeonButton>
+            </div>
         </div>
-      </motion.div>
     );
   }
 
   if (!currentCard) {
-    return (
-      <p style={{ textAlign: 'center', fontFamily: 'var(--font-display)', color: 'var(--color-red)' }}>
-        // CRITICAL STATE ERROR: RE-INITIALIZING... //
-      </p>
-    );
+    return <p className="text-center font-orbitron text-red-500">// CRITICAL STATE ERROR: RE-INITIALIZING... //</p>;
   }
 
+
   return (
-    <motion.div
-      className="flex flex-col gap-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      style={{ alignItems: 'center' }}
-    >
-      <div style={{ width: '100%', maxWidth: '600px', position: 'relative' }}>
+    <div className="flex flex-col items-center gap-4">
+      <div className="w-full max-w-lg relative">
         <Flashcard
           frontText={direction === 'de-en' ? currentCard.original : currentCard.translation}
           backText={direction === 'de-en' ? currentCard.translation : currentCard.original}
@@ -323,104 +306,72 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession, onPr
           onClick={handleFlip}
         />
         <NeonButton
-          onClick={handleGetAIContext}
-          onTouchStart={handleGetAIContext}
-          disabled={isContextLoading || !isAiEnabled}
-          color="purple"
-          className="btn-icon"
-          style={{
-            position: 'absolute',
-            bottom: 'var(--space-2)',
-            right: 'var(--space-2)',
-            zIndex: 10,
-            minWidth: '44px',
-            minHeight: '44px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            touchAction: 'manipulation',
-            pointerEvents: 'auto'
-          }}
-          title={isAiEnabled ? "Get AI Context" : "API Key not set"}
+            onClick={handleGetAIContext}
+            onTouchStart={handleGetAIContext}
+            disabled={isContextLoading || !isAiEnabled}
+            color="purple"
+            className="!p-3 absolute bottom-2 right-2 z-10 !min-w-[44px] !min-h-[44px] flex items-center justify-center"
+            style={{
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+              pointerEvents: 'auto'
+            }}
+            title={isAiEnabled ? "Get AI Context" : "API Key not set"}
         >
-          <SparklesIcon />
+            <SparklesIcon />
         </NeonButton>
       </div>
-
-      <div style={{ width: '100%', maxWidth: '600px', minHeight: '10rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <AIContextDisplay
-          isLoading={isContextLoading}
-          contextData={aiContext}
-          error={contextError}
+      
+      <div className="w-full max-w-lg min-h-[10rem] flex items-center justify-center">
+        <AIContextDisplay 
+            isLoading={isContextLoading}
+            contextData={aiContext}
+            error={contextError}
         />
       </div>
 
-      <div style={{ height: '3rem', width: '100%', maxWidth: '600px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <AnimatePresence mode="wait">
-          {!isFlipped ? (
-            <motion.div
-              key="reveal"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              <NeonButton onClick={handleFlip} color="cyan" style={{ width: '12rem' }}>
-                Reveal Answer
-              </NeonButton>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="answer"
-              className="flex flex-center gap-4 w-full"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              <NeonButton onClick={() => handleAnswer(false)} color="red" className="flex flex-center gap-2" style={{ width: '10rem' }}>
+
+      <div className="h-12 w-full max-w-lg flex items-center justify-center">
+        {!isFlipped ? (
+            <NeonButton onClick={handleFlip} color="cyan" className="w-48">
+              Reveal Answer
+            </NeonButton>
+        ) : (
+          <div className="flex items-center justify-center gap-4 w-full animate-fade-in">
+             <NeonButton onClick={() => handleAnswer(false)} color="red" className="flex items-center justify-center gap-2 w-40">
                 <XIcon /> Incorrect
-              </NeonButton>
-              <NeonButton onClick={() => handleAnswer(true)} color="green" className="flex flex-center gap-2" style={{ width: '10rem' }}>
+            </NeonButton>
+            <NeonButton onClick={() => handleAnswer(true)} color="green" className="flex items-center justify-center gap-2 w-40">
                 <CheckIcon /> Correct
-              </NeonButton>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </NeonButton>
+          </div>
+        )}
       </div>
 
-      <motion.div
-        className="card card-purple p-4 flex flex-col gap-4"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        style={{ width: '100%', maxWidth: '600px' }}
-      >
+      <div className="w-full max-w-lg p-4 border border-[#9d4edd]/50 bg-[#1a1a2e]/50 backdrop-blur-sm rounded-lg flex flex-col gap-4">
         <CategoryDisplay cardProgress={cardProgress} />
-        <p style={{ fontFamily: 'var(--font-display)', textAlign: 'center', fontSize: 'var(--font-size-xl)' }}>
-          {activeCards.length} Cards Remaining
-        </p>
+        <p className="font-orbitron text-center text-xl">{activeCards.length} Cards Remaining</p>
         <ProgressBar current={masteredCount} total={cards.length} />
-
+        
         <div className="grid grid-cols-2 gap-4">
-          <NeonButton onClick={handleShuffle} color="purple" className="flex flex-center gap-2">
+          <NeonButton onClick={handleShuffle} color="purple" className="flex items-center justify-center gap-2">
             <ShuffleIcon /> Shuffle
           </NeonButton>
-          <NeonButton onClick={initializeSession} color="purple" className="flex flex-center gap-2">
+          <NeonButton onClick={initializeSession} color="purple" className="flex items-center justify-center gap-2">
             <ResetIcon /> Reset
           </NeonButton>
         </div>
-        <div className="flex flex-center">
-          <NeonToggle
-            label="DE↔EN"
-            checked={direction === 'en-de'}
-            onChange={handleDirectionChange}
-          />
+        <div className="flex justify-center">
+             <NeonToggle
+                label="DE↔EN"
+                checked={direction === 'en-de'}
+                onChange={handleDirectionChange}
+            />
         </div>
-      </motion.div>
-
+      </div>
+      
       <NeonButton onClick={onEndSession} color="red">End Session</NeonButton>
-    </motion.div>
+    </div>
   );
 };
 
