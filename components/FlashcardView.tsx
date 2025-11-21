@@ -75,7 +75,11 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
     initializeSession();
   }, [cards, initializeSession]);
 
-  const handleFlip = useCallback(() => {
+  const handleFlip = useCallback((event?: React.MouseEvent | React.TouchEvent) => {
+    // Don't flip if the click came from a button or if already flipped
+    if (event && event.target !== event.currentTarget) {
+      return;
+    }
     if (!isFlipped) {
       setIsFlipped(true);
     }
@@ -95,8 +99,9 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
   }, [currentCard]);
 
 
-  const handleGetAIContext = async (event: React.MouseEvent) => {
-    // Prevent the click from propagating to the flashcard
+  const handleGetAIContext = async (event: React.MouseEvent | React.TouchEvent) => {
+    // Prevent the event from propagating to the flashcard
+    event.preventDefault();
     event.stopPropagation();
 
     if (!currentCard) return;
@@ -289,10 +294,15 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
         />
         <NeonButton
             onClick={handleGetAIContext}
+            onTouchStart={handleGetAIContext}
             disabled={isContextLoading || !isAiEnabled}
             color="purple"
-            className="!p-2 absolute bottom-2 right-2 z-10 touch-manipulation"
-            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+            className="!p-3 absolute bottom-2 right-2 z-10 !min-w-[44px] !min-h-[44px] flex items-center justify-center"
+            style={{
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+              pointerEvents: 'auto'
+            }}
             title={isAiEnabled ? "Get AI Context" : "API Key not set"}
         >
             <SparklesIcon />

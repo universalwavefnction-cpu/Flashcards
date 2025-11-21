@@ -5,14 +5,19 @@ interface FlashcardProps {
   frontText: string;
   backText: string;
   isFlipped: boolean;
-  onClick: () => void;
+  onClick: (event?: React.MouseEvent | React.TouchEvent) => void;
 }
 
 const Flashcard: React.FC<FlashcardProps> = ({ frontText, backText, isFlipped, onClick }) => {
+  const handleInteraction = (event: React.MouseEvent | React.TouchEvent) => {
+    onClick(event);
+  };
+
   return (
     <div
       className="w-full aspect-[3/2] [perspective:1000px] cursor-pointer group"
-      onClick={onClick}
+      onClick={handleInteraction}
+      onTouchEnd={handleInteraction}
     >
       <div
         className={`relative w-full h-full [transform-style:preserve-3d] transition-transform duration-700 ease-in-out ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}
