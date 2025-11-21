@@ -202,7 +202,7 @@ const App: React.FC = () => {
       </div>
 
       <footer className="w-full max-w-4xl mx-auto text-center mt-8 text-xs text-purple-400/50">
-          <p>// PROTOTYPE INTERFACE v2.6 //</p>
+          <p>// PROTOTYPE INTERFACE v2.7 //</p>
           <p>{user ? `// CONNECTION ESTABLISHED: ${user.email || user.phoneNumber || 'User Authenticated'}` : '// DATA SERVICE OFFLINE //'}</p>
           <div className="flex items-center justify-center gap-4 mt-2">
               <button 
