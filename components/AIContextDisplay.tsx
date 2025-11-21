@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { motion } from 'framer-motion';
 import type { AIContext } from '../types';
 
 interface AIContextDisplayProps {
@@ -11,37 +11,133 @@ interface AIContextDisplayProps {
 const AIContextDisplay: React.FC<AIContextDisplayProps> = ({ isLoading, contextData, error }) => {
   if (isLoading) {
     return (
-      <div className="text-center p-4">
-        <p className="font-orbitron text-lg text-[#9d4edd] animate-pulse">// GENERATING CONTEXT... //</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{
+          textAlign: 'center',
+          padding: 'var(--space-4)'
+        }}
+      >
+        <p
+          className="animate-pulse"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'var(--font-size-lg)',
+            color: 'var(--color-purple)'
+          }}
+        >
+          // GENERATING CONTEXT... //
+        </p>
+      </motion.div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-4 bg-red-500/10 border border-red-500 text-red-400 rounded-md w-full">
-        <p className="font-bold font-orbitron text-center">// AI TRANSMISSION FAILED //</p>
-        <p className="text-center text-sm">{error}</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        style={{
+          padding: 'var(--space-4)',
+          background: 'rgba(239, 68, 68, 0.1)',
+          border: '1px solid var(--color-red)',
+          borderRadius: 'var(--radius-lg)',
+          width: '100%'
+        }}
+      >
+        <p
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            color: 'var(--color-red-light)',
+            marginBottom: 'var(--space-2)'
+          }}
+        >
+          // AI TRANSMISSION FAILED //
+        </p>
+        <p
+          style={{
+            textAlign: 'center',
+            fontSize: 'var(--font-size-sm)',
+            color: 'var(--color-red-light)'
+          }}
+        >
+          {error}
+        </p>
+      </motion.div>
     );
   }
 
   if (!contextData) {
-    return null; // Render nothing if there's no data, error, or loading state
+    return null;
   }
 
   return (
-    <div className="w-full p-4 border border-[#9d4edd]/50 bg-[#1a1a2e]/50 backdrop-blur-sm rounded-lg flex flex-col gap-3 animate-fade-in">
+    <motion.div
+      className="card card-purple"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      style={{
+        width: '100%',
+        padding: 'var(--space-4)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-3)'
+      }}
+    >
       <div>
-        <h3 className="font-orbitron text-sm uppercase tracking-wider text-[#00f3ff] mb-1">// Example Usage</h3>
-        <p className="italic text-white">"{contextData.sampleSentence}"</p>
-        <p className="text-sm text-gray-400 italic">"{contextData.sentenceTranslation}"</p>
+        <h3
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'var(--font-size-sm)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            color: 'var(--color-cyan)',
+            marginBottom: 'var(--space-1)'
+          }}
+        >
+          // Example Usage
+        </h3>
+        <p
+          style={{
+            fontStyle: 'italic',
+            color: 'white',
+            marginBottom: 'var(--space-1)'
+          }}
+        >
+          "{contextData.sampleSentence}"
+        </p>
+        <p
+          style={{
+            fontSize: 'var(--font-size-sm)',
+            color: 'var(--color-text-muted)',
+            fontStyle: 'italic'
+          }}
+        >
+          "{contextData.sentenceTranslation}"
+        </p>
       </div>
       <div>
-        <h3 className="font-orbitron text-sm uppercase tracking-wider text-[#00f3ff] mb-1">// Explanation</h3>
-        <p className="text-gray-300">{contextData.explanation}</p>
+        <h3
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'var(--font-size-sm)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            color: 'var(--color-cyan)',
+            marginBottom: 'var(--space-1)'
+          }}
+        >
+          // Explanation
+        </h3>
+        <p style={{ color: 'var(--color-text-secondary)' }}>
+          {contextData.explanation}
+        </p>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

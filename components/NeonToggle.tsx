@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { motion } from 'framer-motion';
 
 interface NeonToggleProps {
   label: string;
@@ -9,13 +9,41 @@ interface NeonToggleProps {
 
 const NeonToggle: React.FC<NeonToggleProps> = ({ label, checked, onChange }) => {
   return (
-    <label className="flex items-center justify-center cursor-pointer h-full w-full">
-      <div className="relative">
-        <input type="checkbox" className="sr-only" checked={checked} onChange={onChange} />
-        <div className={`block w-14 h-8 rounded-full transition-colors duration-300 ${checked ? 'bg-[#ff006e]/50' : 'bg-[#00f3ff]/50'}`}></div>
-        <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform duration-300 ${checked ? 'transform translate-x-full' : ''}`}></div>
+    <label
+      className="flex flex-center gap-3"
+      style={{ cursor: 'pointer', height: '100%', width: '100%', justifyContent: 'center' }}
+    >
+      <div className="toggle">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={onChange}
+          style={{ position: 'absolute', opacity: 0 }}
+        />
+        <motion.div
+          className="toggle-slider"
+          animate={{
+            backgroundColor: checked ? '#ff006e' : '#00f3ff',
+            boxShadow: checked
+              ? '0 0 20px rgba(255, 0, 110, 0.5)'
+              : '0 0 20px rgba(0, 243, 255, 0.5)'
+          }}
+          transition={{ duration: 0.3 }}
+        />
       </div>
-      <div className="ml-3 text-white font-bold uppercase">{label}</div>
+      <motion.div
+        style={{
+          color: 'white',
+          fontFamily: 'var(--font-display)',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          fontSize: 'var(--font-size-sm)'
+        }}
+        animate={{ color: checked ? '#ff006e' : '#00f3ff' }}
+        transition={{ duration: 0.3 }}
+      >
+        {label}
+      </motion.div>
     </label>
   );
 };
