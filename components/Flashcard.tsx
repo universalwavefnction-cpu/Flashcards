@@ -1,5 +1,5 @@
+
 import React from 'react';
-import { motion } from 'framer-motion';
 
 interface FlashcardProps {
   frontText: string;
@@ -15,35 +15,23 @@ const Flashcard: React.FC<FlashcardProps> = ({ frontText, backText, isFlipped, o
 
   return (
     <div
-      className="flashcard-container"
+      className="w-full aspect-[3/2] [perspective:1000px] cursor-pointer group"
       onClick={handleInteraction}
       onTouchEnd={handleInteraction}
-      style={{ cursor: 'pointer' }}
     >
-      <motion.div
-        className={`flashcard ${isFlipped ? 'flipped' : ''}`}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+      <div
+        className={`relative w-full h-full [transform-style:preserve-3d] transition-transform duration-700 ease-in-out ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}
       >
         {/* Front Face */}
-        <motion.div
-          className="flashcard-face flashcard-front"
-          whileHover={{ scale: 1.02 }}
-          transition={{ duration: 0.2 }}
-        >
-          <p className="flashcard-text">{frontText}</p>
-        </motion.div>
-
+        <div className="absolute w-full h-full [backface-visibility:hidden] p-4 flex items-center justify-center text-center bg-[#1a1a2e]/50 backdrop-blur-sm border-2 border-[#00f3ff] rounded-lg shadow-lg shadow-[#00f3ff]/30">
+          <p className="font-orbitron text-2xl md:text-4xl text-white break-words">{frontText}</p>
+        </div>
+        
         {/* Back Face */}
-        <motion.div
-          className="flashcard-face flashcard-back"
-          whileHover={{ scale: 1.02 }}
-          transition={{ duration: 0.2 }}
-        >
-          <p className="flashcard-text">{backText}</p>
-        </motion.div>
-      </motion.div>
+        <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] p-4 flex items-center justify-center text-center bg-[#1a1a2e]/50 backdrop-blur-sm border-2 border-[#ff006e] rounded-lg shadow-lg shadow-[#ff006e]/30">
+          <p className="font-orbitron text-2xl md:text-4xl text-white break-words">{backText}</p>
+        </div>
+      </div>
     </div>
   );
 };
