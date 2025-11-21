@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  signInWithPopup, 
-  createUserWithEmailAndPassword, 
+import { motion } from 'framer-motion';
+import {
+  signInWithPopup,
+  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   RecaptchaVerifier,
   signInWithPhoneNumber,
@@ -10,7 +11,6 @@ import {
 import { auth, googleProvider } from '../firebase';
 import NeonButton from '../components/NeonButton';
 
-// Fix: Augment the Window interface to include recaptchaVerifier for phone auth.
 declare global {
   interface Window {
     recaptchaVerifier: RecaptchaVerifier;
@@ -29,18 +29,14 @@ const Login: React.FC = () => {
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Set up reCAPTCHA for phone auth
   useEffect(() => {
     if (authMethod === 'phone') {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
-        'callback': () => {
-          // reCAPTCHA solved, allow signInWithPhoneNumber.
-        }
+        'callback': () => {}
       });
     }
   }, [authMethod]);
-
 
   const handleGoogleSignIn = async () => {
     setError(null);
@@ -66,7 +62,7 @@ const Login: React.FC = () => {
       setError(err.message || 'Authentication failed. Please check your credentials.');
     }
   };
-  
+
   const handlePhoneSignIn = async () => {
     setError(null);
     try {
@@ -78,7 +74,7 @@ const Login: React.FC = () => {
       setError(err.message || 'Failed to send verification code. Please check the phone number.');
     }
   };
-  
+
   const handleVerifyOtp = async () => {
     setError(null);
     if (!confirmationResult) {
@@ -97,14 +93,20 @@ const Login: React.FC = () => {
     switch (authMethod) {
       case 'email':
         return (
-          <form onSubmit={handleEmailAuth} className="w-full flex flex-col gap-4">
-             <input
+          <motion.form
+            onSubmit={handleEmailAuth}
+            className="w-full flex flex-col gap-4"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
               required
-              className="w-full p-3 bg-[#0a0e27]/80 border-2 border-[#00f3ff] rounded-md focus:outline-none focus:border-[#ff006e] focus:ring-2 focus:ring-[#ff006e] text-white"
+              className="input"
             />
             <input
               type="password"
@@ -113,19 +115,35 @@ const Login: React.FC = () => {
               placeholder="Password"
               required
               minLength={6}
-              className="w-full p-3 bg-[#0a0e27]/80 border-2 border-[#00f3ff] rounded-md focus:outline-none focus:border-[#ff006e] focus:ring-2 focus:ring-[#ff006e] text-white"
+              className="input"
             />
             <NeonButton type="submit" color="magenta" className="w-full">
               {isSignUp ? 'Sign Up' : 'Login'}
             </NeonButton>
-            <button type="button" onClick={() => setIsSignUp(!isSignUp)} className="text-sm text-[#00f3ff] hover:underline">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--color-cyan)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
               {isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
             </button>
-          </form>
+          </motion.form>
         );
       case 'phone':
         return (
-            <div className="w-full flex flex-col gap-4">
+          <motion.div
+            className="w-full flex flex-col gap-4"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             {!confirmationResult ? (
               <>
                 <input
@@ -134,7 +152,7 @@ const Login: React.FC = () => {
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Phone number with country code"
                   required
-                  className="w-full p-3 bg-[#0a0e27]/80 border-2 border-[#00f3ff] rounded-md focus:outline-none focus:border-[#ff006e] focus:ring-2 focus:ring-[#ff006e] text-white"
+                  className="input"
                 />
                 <NeonButton onClick={handlePhoneSignIn} color="magenta" className="w-full">
                   Send Code
@@ -148,46 +166,110 @@ const Login: React.FC = () => {
                   onChange={(e) => setOtp(e.target.value)}
                   placeholder="6-digit verification code"
                   required
-                  className="w-full p-3 bg-[#0a0e27]/80 border-2 border-[#00f3ff] rounded-md focus:outline-none focus:border-[#ff006e] focus:ring-2 focus:ring-[#ff006e] text-white"
+                  className="input"
                 />
                 <NeonButton onClick={handleVerifyOtp} color="magenta" className="w-full">
                   Verify & Sign In
                 </NeonButton>
               </>
             )}
-          </div>
+          </motion.div>
         );
       case 'google':
       default:
         return (
-          <NeonButton onClick={handleGoogleSignIn} color="magenta" className="w-full">
-            Sign in with Google
-          </NeonButton>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{ width: '100%' }}
+          >
+            <NeonButton onClick={handleGoogleSignIn} color="magenta" className="w-full">
+              Sign in with Google
+            </NeonButton>
+          </motion.div>
         );
     }
-  }
+  };
 
   return (
-    <div className="p-6 border border-[#9d4edd] bg-[#1a1a2e]/50 backdrop-blur-sm shadow-lg shadow-[#9d4edd]/20 rounded-lg flex flex-col gap-6 items-center animate-fade-in w-full max-w-sm">
-      <h2 className="font-orbitron text-3xl text-center text-[#9d4edd]">
+    <motion.div
+      className="card card-purple p-6"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-6)',
+        alignItems: 'center',
+        width: '100%',
+        maxWidth: '28rem'
+      }}
+    >
+      <h2
+        className="text-gradient-purple"
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'var(--font-size-3xl)',
+          textAlign: 'center'
+        }}
+      >
         // SECURE LOGIN //
       </h2>
-      <div className="flex w-full border-b border-[#9d4edd]/50">
-        <button onClick={() => setAuthMethod('google')} className={`flex-1 p-2 font-orbitron uppercase transition-colors ${authMethod === 'google' ? 'text-[#ff006e] border-b-2 border-[#ff006e]' : 'text-gray-400'}`}>Google</button>
-        <button onClick={() => setAuthMethod('email')} className={`flex-1 p-2 font-orbitron uppercase transition-colors ${authMethod === 'email' ? 'text-[#ff006e] border-b-2 border-[#ff006e]' : 'text-gray-400'}`}>Email</button>
-        <button onClick={() => setAuthMethod('phone')} className={`flex-1 p-2 font-orbitron uppercase transition-colors ${authMethod === 'phone' ? 'text-[#ff006e] border-b-2 border-[#ff006e]' : 'text-gray-400'}`}>Phone</button>
+      <div
+        className="flex w-full"
+        style={{
+          borderBottom: '1px solid rgba(157, 78, 221, 0.5)'
+        }}
+      >
+        {(['google', 'email', 'phone'] as AuthMethod[]).map((method) => (
+          <motion.button
+            key={method}
+            onClick={() => setAuthMethod(method)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              flex: 1,
+              padding: 'var(--space-2)',
+              fontFamily: 'var(--font-display)',
+              textTransform: 'uppercase',
+              fontSize: 'var(--font-size-sm)',
+              background: 'none',
+              border: 'none',
+              borderBottom: authMethod === method ? '2px solid var(--color-magenta)' : 'none',
+              color: authMethod === method ? 'var(--color-magenta)' : 'var(--color-text-muted)',
+              cursor: 'pointer',
+              transition: 'all var(--transition-base)'
+            }}
+          >
+            {method}
+          </motion.button>
+        ))}
       </div>
 
-      <p className="text-center text-gray-300">
+      <p style={{ textAlign: 'center', color: 'var(--color-text-secondary)' }}>
         Sign in to sync your databanks across all devices.
       </p>
 
-      {error && <p className="text-red-400 text-center text-sm">{error}</p>}
+      {error && (
+        <motion.p
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            color: 'var(--color-red-light)',
+            textAlign: 'center',
+            fontSize: 'var(--font-size-sm)'
+          }}
+        >
+          {error}
+        </motion.p>
+      )}
 
       {renderAuthMethod()}
-      
+
       <div id="recaptcha-container"></div>
-    </div>
+    </motion.div>
   );
 };
 

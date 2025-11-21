@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { motion } from 'framer-motion';
 import type { Deck } from '../types';
 import NeonButton from './NeonButton';
 import { PlusIcon } from './Icons';
@@ -12,30 +12,93 @@ interface DeckListProps {
 
 const DeckList: React.FC<DeckListProps> = ({ decks, onSelectDeck, onCreateDeck }) => {
   return (
-    <div className="p-6 border border-[#9d4edd] bg-[#1a1a2e]/50 backdrop-blur-sm shadow-lg shadow-[#9d4edd]/20 rounded-lg flex flex-col gap-4 animate-fade-in">
-        <h2 className="font-orbitron text-3xl text-center text-[#9d4edd]">
-            // SELECT DATABANK //
-        </h2>
-        {decks.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[50vh] overflow-y-auto pr-2">
-            {decks.map((deck) => (
-                <button
-                key={deck.id}
-                onClick={() => onSelectDeck(deck.id)}
-                className="p-4 border-2 border-[#00f3ff] rounded-lg bg-[#0a0e27]/50 hover:bg-[#00f3ff]/10 hover:shadow-[0_0_15px_#00f3ff] transition-all duration-300 text-left"
-                >
-                <h3 className="font-orbitron text-xl text-white truncate">{deck.name}</h3>
-                <p className="text-sm text-gray-400">{deck.cards.length} cards</p>
-                </button>
-            ))}
-            </div>
-        ) : (
-            <p className="text-center text-gray-400 py-8">// NO DATABANKS FOUND. CREATE ONE TO BEGIN. //</p>
-        )}
-         <NeonButton onClick={onCreateDeck} color="magenta" className="mt-4 w-full flex items-center justify-center gap-2">
-            <PlusIcon /> Create New Databank
-        </NeonButton>
-    </div>
+    <motion.div
+      className="card card-purple p-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}
+    >
+      <h2
+        className="text-gradient-purple"
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'var(--font-size-3xl)',
+          textAlign: 'center'
+        }}
+      >
+        // SELECT DATABANK //
+      </h2>
+      {decks.length > 0 ? (
+        <div
+          className="grid grid-cols-1 grid-cols-sm-2 grid-cols-lg-3 gap-6"
+          style={{
+            maxHeight: '50vh',
+            overflowY: 'auto',
+            paddingRight: 'var(--space-2)'
+          }}
+        >
+          {decks.map((deck, index) => (
+            <motion.button
+              key={deck.id}
+              onClick={() => onSelectDeck(deck.id)}
+              className="card card-cyan"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05, duration: 0.3 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                padding: 'var(--space-4)',
+                textAlign: 'left',
+                cursor: 'pointer'
+              }}
+            >
+              <h3
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--font-size-xl)',
+                  color: 'white',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  marginBottom: 'var(--space-2)'
+                }}
+              >
+                {deck.name}
+              </h3>
+              <p
+                style={{
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-text-muted)'
+                }}
+              >
+                {deck.cards.length} cards
+              </p>
+            </motion.button>
+          ))}
+        </div>
+      ) : (
+        <p
+          style={{
+            textAlign: 'center',
+            color: 'var(--color-text-muted)',
+            padding: 'var(--space-8) 0',
+            fontFamily: 'var(--font-display)'
+          }}
+        >
+          // NO DATABANKS FOUND. CREATE ONE TO BEGIN. //
+        </p>
+      )}
+      <NeonButton
+        onClick={onCreateDeck}
+        color="magenta"
+        className="w-full flex flex-center gap-2"
+        style={{ marginTop: 'var(--space-4)' }}
+      >
+        <PlusIcon /> Create New Databank
+      </NeonButton>
+    </motion.div>
   );
 };
 

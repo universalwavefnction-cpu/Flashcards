@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import DeckEditor from './components/VocabularyInput';
 import FlashcardView from './components/FlashcardView';
 import * as firestoreService from './hooks/useFirestore';
@@ -32,10 +33,9 @@ const App: React.FC = () => {
         setIsLoading(true);
         const currentDecks = await firestoreService.getDecks(user.uid);
         setDecks(currentDecks);
-        // Check for legacy decks on first load after login
         const localDecks = await localStorageService.getDecks();
         if (localDecks.length > 0) {
-            setLegacyDecks(localDecks);
+          setLegacyDecks(localDecks);
         }
         setIsLoading(false);
       };
@@ -45,23 +45,21 @@ const App: React.FC = () => {
       setIsLoading(false);
     }
   }, [user]);
-  
+
   const handleMigrateDecks = async () => {
     if (user && legacyDecks) {
       try {
         await firestoreService.importLegacyDecks(user.uid, legacyDecks);
-        // Clear legacy decks from local storage after successful migration
         await localStorageService.deleteDeck('all');
         const currentDecks = await firestoreService.getDecks(user.uid);
         setDecks(currentDecks);
-        setLegacyDecks(null); // Hide migration prompt
+        setLegacyDecks(null);
       } catch (error) {
         console.error("Failed to migrate decks:", error);
         alert("There was an error migrating your decks. Please try again.");
       }
     }
   };
-
 
   const handleCreateNewDeck = () => {
     setActiveDeckId(null);
@@ -84,15 +82,15 @@ const App: React.FC = () => {
     setDecks(decks.filter(d => d.id !== deckId));
     setView('deck-list');
     setActiveDeckId(null);
-  }
+  };
 
   const handleSaveDeck = useCallback(async (deckData: { id?: string; name: string; cards: Card[] }) => {
     if (!user) return;
     const { id, name, cards } = deckData;
-    if (id) { // Editing existing deck
+    if (id) {
       const updatedDeck = await firestoreService.saveDeck(user.uid, { id, name, cards });
       setDecks(prevDecks => prevDecks.map(deck => (deck.id === id ? updatedDeck : deck)));
-    } else { // Creating new deck
+    } else {
       const newDeck = await firestoreService.createDeck(user.uid, { name, cards });
       setDecks(prevDecks => [...prevDecks, newDeck]);
     }
@@ -116,13 +114,11 @@ const App: React.FC = () => {
     const deckToUpdate = decks.find(d => d.id === activeDeckId);
     if (!deckToUpdate) return;
 
-    // Since we now always use the full deck, updatedCards should contain all cards
-    // Just save them directly
     const updatedDeck = { ...deckToUpdate, cards: updatedCards };
     await firestoreService.saveDeck(user.uid, updatedDeck);
     setDecks(prevDecks => prevDecks.map(deck => (deck.id === activeDeckId ? updatedDeck : deck)));
   }, [user, activeDeckId, decks]);
-  
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -135,95 +131,245 @@ const App: React.FC = () => {
 
   const renderLoggedInContent = () => {
     if (legacyDecks && legacyDecks.length > 0) {
-        return (
-            <div className="p-6 text-center border border-[#9d4edd] bg-[#1a1a2e]/50 backdrop-blur-sm shadow-lg shadow-[#9d4edd]/20 rounded-lg">
-                <h2 className="font-orbitron text-2xl text-[#9d4edd] mb-4">// LEGACY DATA DETECTED //</h2>
-                <p className="mb-6 text-gray-300">We found {legacyDecks.length} deck(s) in your browser's storage. Would you like to import them into your account?</p>
-                <NeonButton color="magenta" onClick={handleMigrateDecks}>
-                    Import Decks
-                </NeonButton>
-            </div>
-        );
+      return (
+        <motion.div
+          className="card card-purple p-6"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{ textAlign: 'center' }}
+        >
+          <h2
+            className="text-gradient-purple mb-4"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--font-size-2xl)'
+            }}
+          >
+            // LEGACY DATA DETECTED //
+          </h2>
+          <p
+            style={{
+              marginBottom: 'var(--space-6)',
+              color: 'var(--color-text-secondary)'
+            }}
+          >
+            We found {legacyDecks.length} deck(s) in your browser's storage. Would you like to import them into your account?
+          </p>
+          <NeonButton color="magenta" onClick={handleMigrateDecks}>
+            Import Decks
+          </NeonButton>
+        </motion.div>
+      );
     }
 
-    switch(view) {
+    switch (view) {
       case 'deck-editor':
-        return <DeckEditor
-                  onSaveDeck={handleSaveDeck}
-                  onCancel={() => setView(activeDeckId ? 'deck-view' : 'deck-list')}
-                  deckToEdit={activeDeck}
-                />
+        return (
+          <DeckEditor
+            onSaveDeck={handleSaveDeck}
+            onCancel={() => setView(activeDeckId ? 'deck-view' : 'deck-list')}
+            deckToEdit={activeDeck}
+          />
+        );
       case 'deck-view':
-        return activeDeck ? <DeckView
-                              deck={activeDeck}
-                              onStartSession={handleStartSession}
-                              onEditDeck={() => handleEditDeck(activeDeck.id)}
-                              onDeleteDeck={() => handleDeleteDeck(activeDeck.id)}
-                              onBack={() => { setView('deck-list'); setActiveDeckId(null); }}
-                            /> : <p>Error: Deck not found.</p>;
+        return activeDeck ? (
+          <DeckView
+            deck={activeDeck}
+            onStartSession={handleStartSession}
+            onEditDeck={() => handleEditDeck(activeDeck.id)}
+            onDeleteDeck={() => handleDeleteDeck(activeDeck.id)}
+            onBack={() => {
+              setView('deck-list');
+              setActiveDeckId(null);
+            }}
+          />
+        ) : (
+          <p>Error: Deck not found.</p>
+        );
       case 'flashcards':
-        return <FlashcardView cards={currentSessionCards} onEndSession={handleEndSession} onProgressUpdate={handleProgressUpdate} />
+        return (
+          <FlashcardView
+            cards={currentSessionCards}
+            onEndSession={handleEndSession}
+            onProgressUpdate={handleProgressUpdate}
+          />
+        );
       case 'deck-list':
       default:
-        return <DeckList decks={decks} onSelectDeck={handleSelectDeck} onCreateDeck={handleCreateNewDeck} />
+        return <DeckList decks={decks} onSelectDeck={handleSelectDeck} onCreateDeck={handleCreateNewDeck} />;
     }
-  }
+  };
 
   if (isLoading || authLoading) {
     return (
-      <div className="min-h-screen w-full bg-[#0a0e27] text-[#00f3ff] bg-[linear-gradient(to_right,#1a1a2e_1px,transparent_1px),linear-gradient(to_bottom,#1a1a2e_1px,transparent_1px)] bg-[size:3rem_3rem] p-4 sm:p-8 flex items-center justify-center">
-          <h2 className="font-orbitron text-2xl text-center text-[#9d4edd] animate-pulse">// ACCESSING SECURE CONNECTION... //</h2>
+      <div className="min-h-screen w-full flex flex-center">
+        <motion.h2
+          className="text-gradient-purple animate-pulse"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'var(--font-size-2xl)',
+            textAlign: 'center'
+          }}
+        >
+          // ACCESSING SECURE CONNECTION... //
+        </motion.h2>
       </div>
     );
   }
-  
+
   if (!user) {
     return (
-        <div className="min-h-screen w-full bg-[#0a0e27] text-[#00f3ff] bg-[linear-gradient(to_right,#1a1a2e_1px,transparent_1px),linear-gradient(to_bottom,#1a1a2e_1px,transparent_1px)] bg-[size:3rem_3rem] p-4 sm:p-8 flex items-center justify-center">
-            <Login />
-        </div>
+      <div className="min-h-screen w-full flex flex-center p-4">
+        <Login />
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#0a0e27] text-[#00f3ff] bg-[linear-gradient(to_right,#1a1a2e_1px,transparent_1px),linear-gradient(to_bottom,#1a1a2e_1px,transparent_1px)] bg-[size:3rem_3rem] p-4 sm:p-8 flex flex-col items-center">
-      <style>{`.animate-fade-in { animation: fadeIn 0.5s ease-in-out; } @keyframes fadeIn { 0% { opacity: 0; transform: translateY(-10px); } 100% { opacity: 1; transform: translateY(0); } }`}</style>
-      <div className="w-full max-w-4xl mx-auto flex flex-col flex-grow justify-center">
-        <header className="text-center mb-8 cursor-pointer" onClick={() => { setView('deck-list'); setActiveDeckId(null); }}>
-          <h1 className="font-orbitron text-4xl md:text-6xl font-bold uppercase tracking-widest text-shadow-glow">
+    <div
+      className="min-h-screen w-full flex flex-col"
+      style={{
+        padding: 'var(--space-4)',
+        alignItems: 'center'
+      }}
+    >
+      <div
+        className="container flex flex-col"
+        style={{
+          maxWidth: '80rem',
+          flexGrow: 1,
+          justifyContent: 'center'
+        }}
+      >
+        <motion.header
+          style={{
+            textAlign: 'center',
+            marginBottom: 'var(--space-8)',
+            cursor: 'pointer'
+          }}
+          onClick={() => {
+            setView('deck-list');
+            setActiveDeckId(null);
+          }}
+          whileHover={{ scale: 1.02 }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h1
+            className="text-gradient-cyan"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(2.5rem, 8vw, 4rem)',
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
+              letterSpacing: '0.2em',
+              marginBottom: 'var(--space-2)'
+            }}
+          >
             Cyber Vocab
           </h1>
-          <p className="text-lg text-[#ff006e]">Jack in. Learn fast.</p>
-        </header>
+          <p
+            style={{
+              fontSize: 'var(--font-size-lg)',
+              color: 'var(--color-magenta)'
+            }}
+          >
+            Jack in. Learn fast.
+          </p>
+        </motion.header>
 
-        <main className="w-full">
-          {renderLoggedInContent()}
-        </main>
+        <motion.main
+          className="w-full"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={view}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              {renderLoggedInContent()}
+            </motion.div>
+          </AnimatePresence>
+        </motion.main>
       </div>
 
-      <footer className="w-full max-w-4xl mx-auto text-center mt-8 text-xs text-purple-400/50">
-          <p>// PROTOTYPE INTERFACE v2.6 //</p>
-          <p>{user ? `// CONNECTION ESTABLISHED: ${user.email || user.phoneNumber || 'User Authenticated'}` : '// DATA SERVICE OFFLINE //'}</p>
-          <div className="flex items-center justify-center gap-4 mt-2">
-              <button 
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="text-purple-400/50 hover:text-purple-300 transition-colors flex items-center gap-2"
-                  aria-label="Open API Settings"
-              >
-                  <SettingsIcon /> API Settings
-              </button>
-              {user && (
-                  <button 
-                      onClick={handleLogout}
-                      className="text-purple-400/50 hover:text-purple-300 transition-colors flex items-center gap-2"
-                      aria-label="Logout"
-                  >
-                      <LogoutIcon /> Logout
-                  </button>
-              )}
-          </div>
-      </footer>
-      {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} />}
+      <motion.footer
+        className="w-full container"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        style={{
+          textAlign: 'center',
+          marginTop: 'var(--space-8)',
+          fontSize: 'var(--font-size-xs)',
+          color: 'rgba(157, 78, 221, 0.5)',
+          maxWidth: '80rem'
+        }}
+      >
+        <p style={{ fontFamily: 'var(--font-display)' }}>// PROTOTYPE INTERFACE v2.6 //</p>
+        <p>
+          {user
+            ? `// CONNECTION ESTABLISHED: ${user.email || user.phoneNumber || 'User Authenticated'}`
+            : '// DATA SERVICE OFFLINE //'}
+        </p>
+        <div
+          className="flex flex-center gap-4"
+          style={{
+            marginTop: 'var(--space-2)',
+            justifyContent: 'center'
+          }}
+        >
+          <motion.button
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex flex-center gap-2"
+            whileHover={{ scale: 1.05, color: 'var(--color-purple-light)' }}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              color: 'rgba(157, 78, 221, 0.5)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'var(--transition-base)',
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--font-size-xs)'
+            }}
+            aria-label="Open API Settings"
+          >
+            <SettingsIcon /> API Settings
+          </motion.button>
+          {user && (
+            <motion.button
+              onClick={handleLogout}
+              className="flex flex-center gap-2"
+              whileHover={{ scale: 1.05, color: 'var(--color-purple-light)' }}
+              whileTap={{ scale: 0.95 }}
+              style={{
+                color: 'rgba(157, 78, 221, 0.5)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'var(--transition-base)',
+                fontFamily: 'var(--font-display)',
+                fontSize: 'var(--font-size-xs)'
+              }}
+              aria-label="Logout"
+            >
+              <LogoutIcon /> Logout
+            </motion.button>
+          )}
+        </div>
+      </motion.footer>
+      <AnimatePresence>
+        {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} />}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,49 +1,113 @@
-
-import React, { useState } from 'react';
+import React from 'react';
+import { motion } from 'framer-motion';
 import type { Card, Deck } from '../types';
 import NeonButton from './NeonButton';
 import { EditIcon, TrashIcon, ArrowLeftIcon } from './Icons';
 
 interface DeckViewProps {
-    deck: Deck;
-    onStartSession: (cards: Card[]) => void;
-    onEditDeck: () => void;
-    onDeleteDeck: () => void;
-    onBack: () => void;
+  deck: Deck;
+  onStartSession: (cards: Card[]) => void;
+  onEditDeck: () => void;
+  onDeleteDeck: () => void;
+  onBack: () => void;
 }
 
 const DeckView: React.FC<DeckViewProps> = ({ deck, onStartSession, onEditDeck, onDeleteDeck, onBack }) => {
-    const handleStart = () => {
-        onStartSession(deck.cards);
-    };
-    
-    const handleDelete = () => {
-        if (window.confirm(`Are you sure you want to delete the databank "${deck.name}"? This action cannot be undone.`)) {
-            onDeleteDeck();
-        }
-    };
+  const handleStart = () => {
+    onStartSession(deck.cards);
+  };
 
-    return (
-        <div className="p-6 border border-[#9d4edd] bg-[#1a1a2e]/50 backdrop-blur-sm shadow-lg shadow-[#9d4edd]/20 rounded-lg flex flex-col gap-6 items-center animate-fade-in">
-            <div className="w-full flex justify-between items-center gap-4">
-                <NeonButton onClick={onBack} color="purple" className="!p-2"><ArrowLeftIcon /></NeonButton>
-                <h2 className="font-orbitron text-2xl sm:text-3xl text-center text-white truncate flex-1">{deck.name}</h2>
-                <div className="flex gap-2">
-                    <NeonButton onClick={onEditDeck} color="cyan" className="!p-2"><EditIcon /></NeonButton>
-                    <NeonButton onClick={handleDelete} color="red" className="!p-2"><TrashIcon /></NeonButton>
-                </div>
-            </div>
+  const handleDelete = () => {
+    if (window.confirm(`Are you sure you want to delete the databank "${deck.name}"? This action cannot be undone.`)) {
+      onDeleteDeck();
+    }
+  };
 
-            <p className="font-orbitron text-xl text-[#00f3ff]">{deck.cards.length} Total Cards</p>
-
-            <div className="w-full p-4 border border-[#00f3ff]/50 bg-[#0a0e27]/50 rounded-lg flex flex-col items-center gap-4">
-                 <h3 className="font-orbitron text-xl text-[#00f3ff]">// INITIATE SESSION //</h3>
-                <NeonButton onClick={handleStart} color="magenta" disabled={deck.cards.length === 0}>
-                    Begin Transmission
-                </NeonButton>
-            </div>
+  return (
+    <motion.div
+      className="card card-purple p-6"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-6)',
+        alignItems: 'center'
+      }}
+    >
+      <div
+        className="w-full flex flex-between gap-4"
+        style={{ alignItems: 'center' }}
+      >
+        <NeonButton onClick={onBack} color="purple" className="btn-icon">
+          <ArrowLeftIcon />
+        </NeonButton>
+        <h2
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'var(--font-size-3xl)',
+            textAlign: 'center',
+            color: 'white',
+            flex: 1,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}
+        >
+          {deck.name}
+        </h2>
+        <div className="flex gap-2">
+          <NeonButton onClick={onEditDeck} color="cyan" className="btn-icon">
+            <EditIcon />
+          </NeonButton>
+          <NeonButton onClick={handleDelete} color="red" className="btn-icon">
+            <TrashIcon />
+          </NeonButton>
         </div>
-    );
+      </div>
+
+      <motion.p
+        className="text-gradient-cyan"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'var(--font-size-xl)'
+        }}
+      >
+        {deck.cards.length} Total Cards
+      </motion.p>
+
+      <motion.div
+        className="card card-cyan p-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        style={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 'var(--space-4)'
+        }}
+      >
+        <h3
+          className="text-gradient-cyan"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'var(--font-size-xl)'
+          }}
+        >
+          // INITIATE SESSION //
+        </h3>
+        <NeonButton onClick={handleStart} color="magenta" disabled={deck.cards.length === 0}>
+          Begin Transmission
+        </NeonButton>
+      </motion.div>
+    </motion.div>
+  );
 };
 
 export default DeckView;
