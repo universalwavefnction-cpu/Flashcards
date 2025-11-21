@@ -37,12 +37,22 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
   const [isContextLoading, setIsContextLoading] = useState(false);
   const [contextError, setContextError] = useState<string | null>(null);
   const [isAiEnabled, setIsAiEnabled] = useState(false);
+  const abortControllerRef = React.useRef<AbortController | null>(null);
 
   // Check for API key on mount and when cards change (session restarts)
   useEffect(() => {
     const key = getApiKey() || process.env.API_KEY;
     setIsAiEnabled(!!key);
   }, [cards]);
+
+  // Cleanup: Abort any pending AI requests on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const resetCardState = useCallback(() => {
     setIsFlipped(false);
@@ -75,13 +85,20 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
   
   // Clear AI context when card changes
   useEffect(() => {
+    // Abort any pending request when card changes
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     setAiContext(null);
     setIsContextLoading(false);
     setContextError(null);
   }, [currentCard]);
 
 
-  const handleGetAIContext = async () => {
+  const handleGetAIContext = async (event: React.MouseEvent) => {
+    // Prevent the click from propagating to the flashcard
+    event.stopPropagation();
+
     if (!currentCard) return;
 
     const apiKey = getApiKey() || process.env.API_KEY;
@@ -91,13 +108,23 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
       return;
     }
 
+    // Abort any previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     setIsContextLoading(true);
     setAiContext(null);
     setContextError(null);
 
+    // Create AbortController for timeout on mobile
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    const timeoutId = setTimeout(() => abortController.abort(), 15000);
+
     try {
       const ai = new GoogleGenAI({ apiKey });
-      
+
       const language = direction === 'de-en' ? 'German' : 'English';
       const wordToExplain = direction === 'de-en' ? currentCard.original : currentCard.translation;
 
@@ -120,7 +147,8 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
           required: ['sampleSentence', 'sentenceTranslation', 'explanation'],
       };
 
-      const response = await ai.models.generateContent({
+      // Wrap the API call with timeout using Promise.race
+      const apiCall = ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: `Provide context for the ${language} word "${wordToExplain}". Give me a simple sample sentence, its English translation, and a brief explanation.`,
         config: {
@@ -128,6 +156,14 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
           responseSchema: responseSchema,
         },
       });
+
+      const timeoutPromise = new Promise((_, reject) => {
+        abortController.signal.addEventListener('abort', () => {
+          reject(new Error('Request timeout'));
+        });
+      });
+
+      const response = await Promise.race([apiCall, timeoutPromise]);
 
       if (!response.text) {
         throw new Error("No response text received from AI");
@@ -137,14 +173,23 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
       // The model can sometimes wrap the JSON in markdown fences (```json ... ```).
       // This regex strips them before parsing.
       const jsonText = rawText.replace(/^```json\s*|```$/g, '');
-      
+
       const data: AIContext = JSON.parse(jsonText);
       setAiContext(data);
 
     } catch (err) {
+      // Don't show error if request was aborted intentionally
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
       console.error("AI context error:", err);
-      setContextError("Failed to generate context. The AI might be offline or the API key is invalid.");
+      if (err instanceof Error && err.message === 'Request timeout') {
+        setContextError("Request timed out. Please check your connection and try again.");
+      } else {
+        setContextError("Failed to generate context. The AI might be offline or the API key is invalid.");
+      }
     } finally {
+      clearTimeout(timeoutId);
       setIsContextLoading(false);
     }
   };
@@ -242,11 +287,12 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ cards, onEndSession }) =>
           isFlipped={isFlipped}
           onClick={handleFlip}
         />
-        <NeonButton 
-            onClick={handleGetAIContext} 
+        <NeonButton
+            onClick={handleGetAIContext}
             disabled={isContextLoading || !isAiEnabled}
-            color="purple" 
-            className="!p-2 absolute bottom-2 right-2 z-10"
+            color="purple"
+            className="!p-2 absolute bottom-2 right-2 z-10 touch-manipulation"
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             title={isAiEnabled ? "Get AI Context" : "API Key not set"}
         >
             <SparklesIcon />
