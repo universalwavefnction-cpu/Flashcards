@@ -116,6 +116,8 @@ const App: React.FC = () => {
     const deckToUpdate = decks.find(d => d.id === activeDeckId);
     if (!deckToUpdate) return;
 
+    // Since we now always use the full deck, updatedCards should contain all cards
+    // Just save them directly
     const updatedDeck = { ...deckToUpdate, cards: updatedCards };
     await firestoreService.saveDeck(user.uid, updatedDeck);
     setDecks(prevDecks => prevDecks.map(deck => (deck.id === activeDeckId ? updatedDeck : deck)));

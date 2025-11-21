@@ -13,12 +13,8 @@ interface DeckViewProps {
 }
 
 const DeckView: React.FC<DeckViewProps> = ({ deck, onStartSession, onEditDeck, onDeleteDeck, onBack }) => {
-    const [chunkSize, setChunkSize] = useState(20);
-
     const handleStart = () => {
-        const shuffledCards = [...deck.cards].sort(() => Math.random() - 0.5);
-        const sessionChunk = shuffledCards.slice(0, Math.min(chunkSize, deck.cards.length));
-        onStartSession(sessionChunk);
+        onStartSession(deck.cards);
     };
     
     const handleDelete = () => {
@@ -39,23 +35,9 @@ const DeckView: React.FC<DeckViewProps> = ({ deck, onStartSession, onEditDeck, o
             </div>
 
             <p className="font-orbitron text-xl text-[#00f3ff]">{deck.cards.length} Total Cards</p>
-            
+
             <div className="w-full p-4 border border-[#00f3ff]/50 bg-[#0a0e27]/50 rounded-lg flex flex-col items-center gap-4">
                  <h3 className="font-orbitron text-xl text-[#00f3ff]">// INITIATE SESSION //</h3>
-                 <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <label htmlFor="chunk-size" className="font-bold uppercase tracking-wider text-[#00f3ff]">
-                        // Chunk Size
-                    </label>
-                    <input
-                        id="chunk-size"
-                        type="number"
-                        value={chunkSize}
-                        onChange={(e) => setChunkSize(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                        min="1"
-                        max={deck.cards.length}
-                        className="w-24 p-2 bg-[#0a0e27]/80 border-2 border-[#00f3ff] rounded-md focus:outline-none focus:border-[#ff006e] focus:ring-2 focus:ring-[#ff006e] text-white text-center"
-                    />
-                </div>
                 <NeonButton onClick={handleStart} color="magenta" disabled={deck.cards.length === 0}>
                     Begin Transmission
                 </NeonButton>
